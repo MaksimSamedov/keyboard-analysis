@@ -58,7 +58,7 @@ func (con *InputController) Process(ctx *fiber.Ctx) error {
 	if _, _, err := con.service.ProcessFlow(dto); err != nil {
 		return ctx.JSON(fiber.Map{
 			"success": false,
-			"error":   "Error while saving",
+			"error":   err.Error(),
 		})
 	}
 

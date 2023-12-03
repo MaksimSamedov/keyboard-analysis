@@ -2,7 +2,9 @@ package flow
 
 import (
 	"errors"
+	"fmt"
 	"keyboard-analysis/internal/models"
+	"sync"
 )
 
 type Analyser struct {
@@ -38,15 +40,16 @@ func (analyser *Analyser) Analyse() (bool, error) {
 		return false, ErrNoTasksToAnalyze
 	}
 
-	//wg := sync.WaitGroup{}
-	//wg.Add(l)
+	wg := sync.WaitGroup{}
+	wg.Add(l)
 	for _, task := range analyser.tasks {
-		//go func(task *Task) {
-		task.Analyse()
-		//	wg.Done()
-		//}(task)
+		go func(task *Task) {
+			task.Analyse()
+			wg.Done()
+		}(task)
 	}
-	//wg.Wait()
+	wg.Wait()
+	fmt.Println()
 
 	for _, task := range analyser.tasks {
 		if !task.Success() {

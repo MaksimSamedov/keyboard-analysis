@@ -1,6 +1,8 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+)
 
 type KeyboardFlow struct {
 	gorm.Model `json:"-"`
@@ -21,7 +23,7 @@ type KeyboardEvent struct {
 func (flow *KeyboardFlow) RemoveInvalidEvents() {
 	var res []*KeyboardEvent
 	for _, ev := range flow.Flow {
-		if len(ev.Key) == 1 {
+		if len([]rune(ev.Key)) == 1 { // сравнение по рунам нужно для работы с unicode-символами
 			res = append(res, ev)
 		}
 	}

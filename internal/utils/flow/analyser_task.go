@@ -41,7 +41,6 @@ func (task *Task) Analyse() {
 	// проанализируем потоки из базы и сравним
 	errCnt := float64(0)
 	successCnt := float64(0)
-	fmt.Println("Process: ", task.Flow.Password.Password)
 	for _, sampleFlow := range task.Samples {
 		sample, err := AnalyseEvents(sampleFlow)
 		if err != nil {
@@ -53,7 +52,7 @@ func (task *Task) Analyse() {
 			successCnt++
 		}
 	}
-	fmt.Printf("successCnt/len %.1f/%.1f\n", successCnt, total)
+	fmt.Printf("Process: %s %.1f/%.1f\n", task.Flow.Password.Password, successCnt, total)
 
 	// получим процент успеха/ошибок
 	successPercentage := (successCnt / total) * 100

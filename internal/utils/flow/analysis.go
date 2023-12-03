@@ -84,12 +84,12 @@ var ErrPhraseIsNotComplete = errors.New("phrase from patterns is not complete")
 func OnlyCorrectPatterns(flow *models.KeyboardFlow, patterns []*Pattern) ([]*Pattern, error) {
 	var res []*Pattern
 
-	phrase := flow.Password.Password
+	phrase := []rune(flow.Password.Password)
 	phraseLength := len(phrase)
 	letter := phrase[0]
 	letterIndex := 0
 	for _, pattern := range patterns {
-		if pattern.down.Key == string(letter) {
+		if []rune(pattern.down.Key)[0] == letter {
 			res = append(res, pattern)
 			letterIndex++
 			if letterIndex == phraseLength {
