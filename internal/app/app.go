@@ -33,7 +33,13 @@ func (app *App) Run() error {
 		return err
 	}
 	// migrate
-	mdl := []interface{}{models.KeyboardEvent{}, models.KeyboardFlow{}}
+	mdl := []interface{}{
+		models.KeyboardEvent{},
+		models.KeyboardFlow{},
+		models.User{},
+		models.Password{},
+		models.AccessToken{},
+	}
 	if err := database.MakeMigrations(mdl); err != nil {
 		return err
 	}
@@ -42,12 +48,25 @@ func (app *App) Run() error {
 	// serve front-end
 	app.fiber.Static("/", "./web")
 
+	// wire
+	userService := services.NewUserService(app.db, app.config)
+	keyboardService := services.NewKeyboardService(app.db, app.config, userService)
+
+	inputCon := controllers.NewInputController(keyboardService, userService)
+	userCon := controllers.NewUserController(userService)
+
 	// handle requests
-	keyboardService := services.NewKeyboardService(app.db)
-	inputCon := controllers.NewInputController(keyboardService)
+	app.fiber.Post("/auth/register", userCon.Register)
+	app.fiber.Post("/auth/login", userCon.Login)
+	app.fiber.Post("/user/has-secret", userCon.UserHasSecret)
+	app.fiber.Post("/user/get-secret", userCon.GetSecret)
+	app.fiber.Post("/user/set-secret", userCon.SetSecret)
+
+	app.fiber.Post("/get-passwords", inputCon.GetPasswords)
 	app.fiber.Post("/process", inputCon.Process)
-	app.fiber.Get("/history", inputCon.History)
-	app.fiber.Get("/history/:id", inputCon.History)
+	app.fiber.Post("/history", inputCon.History)
+	app.fiber.Post("/history/:id", inputCon.History)
+	app.fiber.Post("/get-token", inputCon.GetToken)
 
 	return app.fiber.Listen(app.config.AppUrl)
 }

@@ -7,10 +7,18 @@ import (
 )
 
 func main() {
+	// configure
 	conf := config.WithDefaults()
+	conf.PasswordsCount = 2 // 4
+	conf.PasswordsLength = 10
+	conf.AnalyserProps.MaxDeviation = 50
+	conf.AnalyserProps.MinSuccessfulComparisons = 50
+
+	// prepare app
 	logger := log.Default()
 	application := app.New(conf, logger)
 
+	// run
 	if err := application.Run(); err != nil {
 		log.Fatal(err)
 	}

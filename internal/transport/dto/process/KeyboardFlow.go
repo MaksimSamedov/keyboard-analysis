@@ -3,16 +3,27 @@ package process
 import (
 	"encoding/json"
 	"keyboard-analysis/internal/models"
+	"keyboard-analysis/internal/transport/dto/auth"
 )
 
 type KeyboardFlowResponse struct {
-	ID     uint                   `json:"id"`
-	Phrase string                 `json:"phrase"`
-	Flow   []models.KeyboardEvent `json:"flow"`
+	ID     uint                    `json:"id"`
+	Phrase string                  `json:"phrase"`
+	Flow   []*models.KeyboardEvent `json:"flow"`
 }
 
-func FromBytes(data []byte) ([]models.KeyboardFlow, error) {
-	var dto []models.KeyboardFlow
+type KeyboardFlowResults struct {
+	Auth  auth.UserCredentials `json:"auth"`
+	Flows []KeyboardFlowResult `json:"flows"`
+}
+
+type KeyboardFlowResult struct {
+	Flow   []*models.KeyboardEvent `json:"flow"`
+	Phrase string                  `json:"phrase"`
+}
+
+func FromBytes(data []byte) (*KeyboardFlowResults, error) {
+	var dto *KeyboardFlowResults
 	if err := json.Unmarshal(data, &dto); err != nil {
 		return nil, err
 	}
@@ -22,7 +33,7 @@ func FromBytes(data []byte) ([]models.KeyboardFlow, error) {
 func FromModel(flow models.KeyboardFlow) KeyboardFlowResponse {
 	return KeyboardFlowResponse{
 		ID:     flow.ID,
-		Phrase: flow.Phrase,
+		Phrase: flow.Password.Password,
 		Flow:   flow.Flow,
 	}
 }
