@@ -9,8 +9,7 @@ import (
 func main() {
 	// configure
 	conf := config.WithDefaults()
-	conf.PasswordsCount = 2 // 4
-	conf.PasswordsLength = 10
+	conf.PasswordsCount = 3 // 4
 	conf.AnalyserProps.MaxDeviation = 50
 	conf.AnalyserProps.MinSuccessfulComparisons = 50
 

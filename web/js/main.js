@@ -14,6 +14,12 @@ document.ready(() => {
         return
     }
 
+    const accessLevel = document.getElementById('access-level')
+    const loginSpan = document.getElementById('credentials-login')
+    if(loginSpan)
+    {
+        loginSpan.innerText = credentials.login
+    }
     // Основные элементы интерфейса
     const start = document.getElementById('start')
     const stop = document.getElementById('stop')
@@ -23,6 +29,15 @@ document.ready(() => {
     // Форма ввода паролей
     const result = document.getElementById('result')
     const currentPhrase = document.querySelector('label[for=result]')
+
+    // Блок секретной записки
+    const secretNoteCard = document.getElementById('secret-note-card')
+
+    // Установка паролей
+    const passwordsCard = document.getElementById('passwords-form-card')
+    const passwordsForm = document.getElementById('passwords-form')
+    let passwordsFormFields = []
+    const passwordsFormBtn = document.getElementById('passwords-save')
 
 
     // Отобразить форму запуска
@@ -59,7 +74,10 @@ document.ready(() => {
                     body: JSON.stringify(data),
                 })
                     .then(res => res.json())
-                    .then(console.log)
+                    .then(res => {
+                        console.log(res)
+                        goCheckSecret()
+                    })
             })
     })
 
@@ -203,42 +221,85 @@ document.ready(() => {
     }
 
 
-
-    // История
-
-    const history = document.getElementById('history')
-    let selected = null
-    function reloadHistory() {
-        history.innerHTML = ''
-        if(!selected){
-            fetch('/history', {
-                method: 'POST',
-                body: JSON.stringify(credentials),
-            }).then(res => res.json())
-                .then(res => {
-                    console.log(res)
-                    res.forEach(flow => {
-                        const el = document.createElement('div')
-                        el.innerText = flow.phrase
-                        history.append(el)
-                        el.addEventListener('click', e => {
-                            selected = flow.id
-                            reloadHistory()
-                        })
-                    })
-                })
-        }else{
-            fetch('/history/' + selected, {
-                method: 'POST',
-                body: JSON.stringify(credentials),
-            })
+    // Конфигурация
+    function config(){
+        return new Promise(resolve => {
+            fetch('/config')
                 .then(res => res.json())
                 .then(res => {
-                    console.log(res)
+                    if(!res.success || !res.config){
+                        return resolve(null)
+                    }
+                    return resolve(res.config)
                 })
-        }
+                .catch(err => {
+                    console.error(err)
+                    resolve(null)
+                })
+        })
     }
-    reloadHistory()
+
+
+    // Установка паролей
+    let passwordsFormRendered = false
+    function renderPasswordsForm(){
+        if(passwordsFormRendered){
+            return
+        }
+        passwordsFormRendered = true
+
+        config().then(({passwords_count}) => {
+            if(!passwords_count){
+                alert('Кол-во паролей неизвестно')
+                return
+            }
+            passwordsFormFields = []
+            for(let i = 0; i < passwords_count; i++){
+                const pw = document.createElement('input')
+                pw.type = 'text'
+                pw.classList.add('form-control')
+                pw.required = true
+                pw.placeholder = 'Пароль №' + (i + 1)
+
+                const inputGroup = document.createElement('div')
+                inputGroup.classList.add('input-group')
+                inputGroup.append(pw)
+
+                const formGroup = document.createElement('div')
+                formGroup.classList.add('form-group', 'mb-2')
+                formGroup.append(inputGroup)
+
+                passwordsForm.append(formGroup)
+
+                passwordsFormFields.push(pw)
+            }
+            passwordsForm.addEventListener('submit', e => {
+                e.preventDefault()
+                passwordsFormBtn.disabled = true
+                const data = {
+                    auth: credentials,
+                    passwords: passwordsFormFields.map(field => field.value)
+                }
+                fetch('/user/set-passwords', {
+                    method: 'POST',
+                    body: JSON.stringify(data),
+                })
+                    .then(res => res.json())
+                    .then(res => {
+                        if(!res.success){
+                            passwordsFormBtn.disabled = false
+                            return alert(res.error ?? 'Непредвиденная ошибка')
+                        }
+                        goCheckSecret()
+                    })
+                    .catch(err => {
+                        passwordsFormBtn.disabled = false
+                        alert(err)
+                    })
+            })
+            passwordsFormBtn.disabled = false
+        })
+    }
 
 
     // Секретная записка
@@ -248,6 +309,8 @@ document.ready(() => {
 
     let isEditing = false
     let hasSecret = null
+    let needPasswords = null
+    let needSamples = null
     function checkSecret(){
         showSecretBtn.disabled = true
         return fetch('/user/has-secret', {
@@ -257,7 +320,9 @@ document.ready(() => {
             .then(res => {
                 console.log(res)
                 if(res.success){
-                    hasSecret = !!res.data
+                    hasSecret = !!res.data.has_secret
+                    needPasswords = !!res.data.need_passwords
+                    needSamples = !!res.data.need_samples
                     console.log(hasSecret ? 'Есть секрет' : 'Нет секрета')
                     return hasSecret
                 }else{
@@ -270,11 +335,32 @@ document.ready(() => {
                 return res
             })
     }
-    checkSecret()
-        .then(hasSecret => {
-            showSecretBtn.innerText = hasSecret ? 'Редактировать' : 'Создать секретную записку'
-            showSecretBtn.disabled = false
-        })
+    function goCheckSecret(){
+        checkSecret()
+            .then(hasSecret => {
+                showSecretBtn.innerText = hasSecret ? 'Редактировать' : 'Создать секретную записку'
+                showSecretBtn.disabled = false
+            })
+            .then(() => {
+                console.log({needSamples, needPasswords, hasSecret})
+                if(needPasswords){
+                    secretNoteCard.classList.add('d-none')
+                    passwordsCard.classList.remove('d-none')
+                    renderPasswordsForm()
+                    accessLevel.innerText = 'Настройка парольных фраз'
+                }else if(needPasswords === false){
+                    passwordsCard.classList.add('d-none')
+                    if(needSamples){
+                        secretNoteCard.classList.add('d-none')
+                        accessLevel.innerText = 'Калибровка эталонов для входа по клавиатурному почерку (нужно запускать сессии)'
+                    }else{
+                        secretNoteCard.classList.remove('d-none')
+                        accessLevel.innerText = 'Требуется вход по клавиатурному почерку'
+                    }
+                }
+            })
+    }
+    goCheckSecret()
 
 
     function assertToken(){
@@ -338,6 +424,7 @@ document.ready(() => {
                                 secret.disabled = false
                                 isEditing = true
                                 saveSecretBtn.disabled = false
+                                accessLevel.innerText = 'Полный доступ'
                             }else{
                                 showSecretBtn.disabled = false
                                 alert(res.error ?? 'Непредвиденная ошибка')

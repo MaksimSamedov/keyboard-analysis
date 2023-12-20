@@ -15,17 +15,18 @@ type User struct {
 }
 
 var ErrUnableToHashPassword = errors.New("unable to get password hash")
+var ErrAlreadyHasPasswords = errors.New("passwords are already set")
+var ErrNoPasswordsProvided = errors.New("no passwords provided")
 
-func NewUser(login, password string, passwords []*Password) (*User, error) {
+func NewUser(login, password string) (*User, error) {
 	pwHash, err := HashPassword(password)
 	if err != nil {
 		return nil, ErrUnableToHashPassword
 	}
 
 	return &User{
-		Login:     login,
-		Password:  pwHash,
-		Passwords: passwords,
+		Login:    login,
+		Password: pwHash,
 	}, nil
 }
 
@@ -49,4 +50,19 @@ func (user *User) HasSecretNote() bool {
 
 func (user *User) SetSecretNote(note string) {
 	user.SecretNote = &note
+}
+
+func (user *User) SetPasswords(passwords []*Password) error {
+	if user.HasPasswords() {
+		return ErrAlreadyHasPasswords
+	}
+	if len(passwords) == 0 {
+		return ErrNoPasswordsProvided
+	}
+	user.Passwords = passwords
+	return nil
+}
+
+func (user *User) HasPasswords() bool {
+	return len(user.Passwords) != 0
 }

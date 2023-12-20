@@ -53,14 +53,18 @@ func (app *App) Run() error {
 	keyboardService := services.NewKeyboardService(app.db, app.config, userService)
 
 	inputCon := controllers.NewInputController(keyboardService, userService)
-	userCon := controllers.NewUserController(userService)
+	userCon := controllers.NewUserController(userService, keyboardService)
+	confCon := controllers.NewConfigController(app.config)
 
 	// handle requests
 	app.fiber.Post("/auth/register", userCon.Register)
 	app.fiber.Post("/auth/login", userCon.Login)
+	app.fiber.Post("/user/set-passwords", userCon.SetPasswords)
 	app.fiber.Post("/user/has-secret", userCon.UserHasSecret)
 	app.fiber.Post("/user/get-secret", userCon.GetSecret)
 	app.fiber.Post("/user/set-secret", userCon.SetSecret)
+
+	app.fiber.Get("/config", confCon.GetConfig)
 
 	app.fiber.Post("/get-passwords", inputCon.GetPasswords)
 	app.fiber.Post("/process", inputCon.Process)

@@ -140,7 +140,7 @@ func (s *KeyboardService) GetToken(dto *process.KeyboardFlowResults) (*models.Ac
 
 	// generate new token
 	token := models.NewToken(*usr, s.conf.TokenLength, s.conf.TokenLifetime)
-	if err := s.query().Save(token).Error; err != nil {
+	if err := s.query().Save(&token).Error; err != nil {
 		return nil, ErrDatabase
 	}
 
@@ -188,6 +188,19 @@ func (s *KeyboardService) GetSamples(pw *models.Password, count int) ([]*models.
 		return nil, ErrDatabase
 	}
 	return res, nil
+}
+
+func (s *KeyboardService) NeedSamples(usr *models.User) (bool, error) {
+	for _, pw := range usr.Passwords {
+		samples, err := s.GetSamples(pw, s.conf.MinSamples)
+		if err != nil {
+			return false, err
+		}
+		if len(samples) < s.conf.MinSamples {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func (s *KeyboardService) query() *gorm.DB {

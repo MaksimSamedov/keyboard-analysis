@@ -19,3 +19,7 @@ func GenerateForUser(length uint) *Password {
 		Password: pwGen.String(int(length)),
 	}
 }
+
+func PasswordFromString(pw string) *Password {
+	return &Password{Password: pw}
+}

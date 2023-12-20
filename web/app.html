@@ -17,8 +17,16 @@
 
 <div class="container-md py-5">
 
-  <!-- Секретная записка -->
+  <!-- Профиль -->
   <div class="card mb-4">
+    <div class="card-header">
+      <div class="h3">Пользователь: <span id="credentials-login"></span></div>
+      <div class="h4">Статус: <span id="access-level">-</span></div>
+    </div>
+  </div>
+
+  <!-- Секретная записка -->
+  <div class="card mb-4 d-none" id="secret-note-card">
     <div class="card-header">
       <div class="h3">Секретная записка</div>
     </div>
@@ -32,6 +40,20 @@
     <div class="card-footer">
       <button class="btn btn-primary" id="secret-show">Редактировать</button>
       <button class="btn btn-primary" id="secret-save" disabled>Сохранить</button>
+    </div>
+  </div>
+
+  <!-- Установка паролей -->
+  <div class="card mb-4 d-none" id="passwords-form-card">
+    <div class="card-header">
+      <div class="h3">Установка паролей</div>
+    </div>
+    <div class="card-body">
+      <p>Для работы с приложением необходимо установить контрольные фразы (пароли). Эти пароли будут использоваться для анализа клавиатурного почерка при авторизации</p>
+      <form id="passwords-form"></form>
+    </div>
+    <div class="card-footer">
+      <button class="btn btn-primary" id="passwords-save" type="submit" form="passwords-form" disabled>Сохранить</button>
     </div>
   </div>
 
@@ -57,16 +79,6 @@
     <div class="card-footer">
       <button class="btn btn-primary" id="start">Начать новую сессию</button>
       <button class="btn btn-danger d-none" id="stop">Прервать сессию</button>
-    </div>
-  </div>
-
-  <!-- Предыдущие результаты -->
-  <div class="card mt-4">
-    <div class="card-header">
-      <div class="h3">История результатов</div>
-    </div>
-    <div class="card-body">
-      <div id="history"></div>
     </div>
   </div>
 </div>

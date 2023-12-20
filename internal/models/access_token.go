@@ -21,7 +21,7 @@ func (token *AccessToken) IsExpired() bool {
 func NewToken(usr User, length int, lifetime time.Duration) *AccessToken {
 	gen := password.New(password.AllChars)
 	return &AccessToken{
-		User:       usr,
+		//User:       usr,
 		UserID:     usr.ID,
 		Token:      gen.String(length),
 		Expiration: time.Now().Add(lifetime),

@@ -15,7 +15,8 @@ type Config struct {
 	DbPort              string
 	DbName              string
 	PasswordsCount      uint
-	PasswordsLength     uint
+	PasswordMinLength   uint
+	PasswordMaxLength   uint
 	TokenLength         int
 	TokenLifetime       time.Duration
 	MinSamples          int // Сколько раз пользователь должен ввести каждый пароль чтобы начать работать с секретом
@@ -37,7 +38,8 @@ func WithDefaults() Config {
 		DbPort:              "3306",
 		DbName:              "bmil_lab2",
 		PasswordsCount:      10,
-		PasswordsLength:     20,
+		PasswordMinLength:   10,
+		PasswordMaxLength:   64,
 		TokenLength:         200,
 		TokenLifetime:       time.Hour,
 		MinSamples:          5,

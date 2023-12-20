@@ -20,6 +20,8 @@ var ErrUserNotFound = errors.New("user not found")
 var ErrUserExists = errors.New("user already exists")
 var ErrInvalidToken = errors.New("invalid token")
 var ErrTokenExpired = errors.New("token is expired")
+var ErrInvalidPasswordLength = errors.New("invalid password length")
+var ErrInvalidPasswordsCount = errors.New("invalid passwords count")
 
 func NewUserService(db *gorm.DB, conf config.Config) *UserService {
 	return &UserService{db: db, conf: conf}
@@ -56,7 +58,7 @@ func (s *UserService) Register(dto auth.UserCredentials) (*models.User, error) {
 		return nil, ErrUserExists
 	}
 
-	usr, err = models.NewUser(dto.Login, dto.Password, s.GeneratePasswords())
+	usr, err = models.NewUser(dto.Login, dto.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -108,12 +110,29 @@ func (s *UserService) RetrieveByToken(accessToken string) (*models.User, error) 
 	return &token.User, nil
 }
 
-func (s *UserService) GeneratePasswords() []*models.Password {
-	var pws []*models.Password
-	for i := uint(0); i < s.conf.PasswordsCount; i++ {
-		pws = append(pws, models.GenerateForUser(s.conf.PasswordsLength))
+func (s *UserService) SetUserPasswords(usr *models.User, passwords []string) error {
+	if uint(len(passwords)) != s.conf.PasswordsCount {
+		return ErrInvalidPasswordsCount
 	}
-	return pws
+
+	var pws []*models.Password
+	for _, pw := range passwords {
+		l := uint(len([]rune(pw)))
+		if l > s.conf.PasswordMaxLength || l < s.conf.PasswordMinLength {
+			return ErrInvalidPasswordLength
+		}
+		pws = append(pws, models.PasswordFromString(pw))
+	}
+
+	if err := usr.SetPasswords(pws); err != nil {
+		return err
+	}
+
+	if err := s.db.Save(usr).Error; err != nil {
+		return ErrDatabase
+	}
+
+	return nil
 }
 
 func (s *UserService) SetUserSecret(usr *models.User, secretNote string) error {
